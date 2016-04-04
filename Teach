@@ -1,5 +1,5 @@
 -- Teach
--- By Spencer Haneyß
+-- By Spencer Haney
 
 os.loadAPI("API/movement")
 file = fs.open("IgnoreBlocks", "w")

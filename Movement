@@ -1,8 +1,6 @@
 -- Movment API
 -- By Spencer Haney
 
--- Version 1.1
-
 -- The default minimum amount of fuel the turtle
 -- can have before it asks for more
 MIN_FUEL = 200

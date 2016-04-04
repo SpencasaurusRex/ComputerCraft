@@ -1,0 +1,16 @@
+-- Install
+-- By Spencer Haney
+
+quarry = "Y0yzH5mi"
+movement = "AKHFd1mn"
+error = "qiRDJNr0"
+IgnoreBlocks = "ikpE8VnC"
+teach = "hKc1xcCt"
+
+shell.run("pastebin", "get", quarry, "quarry")
+shell.run("pastebin", "get", movement, "movement")
+shell.run("pastebin", "get", error, "error")
+shell.run("pastebin", "get", IgnoreBlocks, "IgnoreBlocks")
+shell.run("pastebin", "get", teach, "teach")
+
+os.reboot()

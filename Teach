@@ -1,0 +1,17 @@
+-- Teach
+-- By Spencer Haneyß
+
+os.loadAPI("API/movement")
+file = fs.open("IgnoreBlocks", "w")
+while true do
+	movement.forward()
+	if turtle.detectDown() then
+		a,b = turtle.inspectDown()
+		name = b["name"]
+		print ("Adding " .. name)
+		file.writeLine(name)
+	else
+		file.close()
+		return
+	end
+end

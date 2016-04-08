@@ -6,8 +6,9 @@
 -- The default minimum amount of fuel the turtle
 -- can have before it asks for more
 MIN_FUEL = 200
+SAVE_LOCATION = "API/position"
 
-os.loadAPI("error")
+os.loadAPI("API/error")
 -- The X value, corresponding to east (X-) and west (X+)
 m_X = 0
 -- The Y value, corresponding to up and down
@@ -25,12 +26,36 @@ function init(x,y,z,h)
 	m_X = x or 0
 	m_Y = y or 0
 	m_Z = z or 0
-	m_H = h or 0 
+	m_H = h or 0
+	load()
 end
 
 function setCallback(refFunc, minFunc)
 	refuelFunc = refFunc
 	minFuelFunc = minFunc
+end
+
+function save()
+	file = fs.open(SAVE_LOCATION, "w")
+	file.writeLine(m_X)
+	file.writeLine(m_Y)
+	file.writeLine(m_Z)
+	file.writeLine(m_H)
+	file.close()
+end
+
+function load()
+	if fs.exists(SAVE_LOCATION) then
+		file = fs.open(SAVE_LOCATION, "r")
+		m_X = tonumber(file.readLine())
+		m_Y = tonumber(file.readLine())
+		m_Z = tonumber(file.readLine())
+		m_H = tonumber(file.readLine())
+		file.close()
+		return true
+	else 
+		return false
+	end
 end
 
 -- Get the current x value
@@ -114,12 +139,14 @@ end
 function left()
 	turtle.turnLeft()
 	m_H = (m_H + 1) % 4
+	save()
 end
 
 -- Turn the turtle right and modify the heading value accordingly
 function right()
 	turtle.turnRight()
 	m_H = (m_H - 1) % 4
+	save()
 end
 
 -- Turn the turtle around and modify the heading value accordingly
@@ -157,6 +184,7 @@ function forward(force)
 		else
 			m_X = m_X + 1
 		end
+		save()
 	end
 	return result
 end
@@ -192,6 +220,7 @@ function back(force)
 		else
 			m_X = m_X - 1
 		end
+		save()
 	end
 	return result
 end
@@ -218,6 +247,7 @@ function up(force)
 	end
 	if result then
 		m_Y = m_Y + 1
+		save()
 	end
 	return result
 end
@@ -238,6 +268,7 @@ function down(force)
 	end
 	if result then
 		m_Y = m_Y - 1
+		save()
 	end
 	return result
 end

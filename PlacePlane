@@ -1,0 +1,35 @@
+os.loadAPI("API/movement")
+
+function printUsage()
+    name = shell.getRunningProgram()
+    print ("Usages:")
+    print (name .. " [width]")
+end
+
+function goHome()
+    movement.gotoX(0)
+    movement.gotoZ(0)
+    lastPosX = movement.getX()
+    lastPosZ = movement.getZ()
+    lastHeading = movement.getHeading()
+end
+
+function getMaterials()
+    goHome()
+end
+
+function selectItem()
+
+end
+
+args = {...}
+
+if not #args == 1 then
+    printUsage()
+    return
+end
+
+width = tonumber(args[1])
+while -z < width - 1 and z < -1 do
+    selectItem()
+    movement.forward() 

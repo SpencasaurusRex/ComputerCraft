@@ -1,236 +1,246 @@
 -- Quarry
 -- By Spencer Haney
 
+-- TODO
+-- Add multiple chests
+-- Support nonflat bedrock
+-- Add chunk unloading support
+-- Throwing away usless items while mining
+-- Support non-square shapes
+-- Setup/config program
+-- Enderchest support
+-- Chunk loader support
+
 -- Load the movement API
 os.loadAPI("API/movement")
 
 function printUsage()
-	name = shell.getRunningProgram()
-	print ("Usages:")
-	print (name .. " [width]")
+    name = shell.getRunningProgram()
+    print ("Usages:")
+    print (name .. " [width]")
 end
 
 -- Attempt to refuel by selecting all slots and attempting
 function tryRefuel()
-	success = false
-	for i = 1,16 do
-		if turtle.getItemCount(i) > 0 then
-			turtle.select(i)
-			if turtle.refuel() then
-				success = true
-			end
-		end
-	end
-	return success
+    success = false
+    for i = 1,16 do
+        if turtle.getItemCount(i) > 0 then
+            turtle.select(i)
+            if turtle.refuel() then
+                success = true
+            end
+        end
+    end
+    return success
 end
 
 -- Calculate the distance from the home spot
 function distFromHome()
-	return movement.linearDistance(0, 0, startY or 0)
+    return movement.linearDistance(0, 0, startY or 0)
 end
 
 -- Calculate the number or slots of the inventory
 -- that have something in them
 function slotsOfInventoryUsed()
-	sum = 0
-	for i = 1,16 do
-		if turtle.getItemCount(i) > 0 then
-			sum = sum + 1
-		end
-	end
-	return sum
+    sum = 0
+    for i = 1,16 do
+        if turtle.getItemCount(i) > 0 then
+            sum = sum + 1
+        end
+    end
+    return sum
 end
 
 -- Figures out if the turtle should go home based 
 function shouldGoHome()
-	if turtle.getFuelLevel() < 100 or turtle.getFuelLevel() <= distFromHome() then
-		tryRefuel()
-		-- Could return the inverse of tryRefuel() here, but
-		-- some fuels (i.e. sugarcane) give us no fuel when used
-		return turtle.getFuelLevel() <= distFromHome()
-	end
-	if slotsOfInventoryUsed() == 16 then
-		-- Can return the inverse here, because even if at
-		-- The fuel limit, using refuel() will use the stack of items
-		return tryRefuel() == false
-	end
+    if turtle.getFuelLevel() < 100 or turtle.getFuelLevel() <= distFromHome() then
+        tryRefuel()
+        -- Could return the inverse of tryRefuel() here, but
+        -- some fuels (i.e. sugarcane) give us no fuel when used
+        return turtle.getFuelLevel() <= distFromHome()
+    end
+    if slotsOfInventoryUsed() == 16 then
+        -- Can return the inverse here, because even if at
+        -- The fuel limit, using refuel() will use the stack of items
+        return tryRefuel() == false
+    end
 end
 
 function lowOnFuel()
-	emptyInventory()
+    emptyInventory()
 end
 
 function getMinFuel()
-	return math.max(200, distFromHome())
+    return math.max(200, distFromHome())
 end
 
 function shouldDigAbove()
-	a,b = turtle.inspectUp()
-  	return a and ignoreBlocks[b["name"]] == nil
+    a,b = turtle.inspectUp()
+    return a and ignoreBlocks[b["name"]] == nil
 end
 
 function shouldDigBelow()
-	a,b = turtle.inspectDown()
-	return a and ignoreBlocks[b["name"]] == nil
+    a,b = turtle.inspectDown()
+    return a and ignoreBlocks[b["name"]] == nil
 end
 
 function gotoHome()
-	print("Going home")
-	-- Snake pattern guarantees the x in the west is clear
-	movement.gotoX(0, true)
-	movement.gotoZ(0, true)
-	movement.gotoY(startY or 0, true)
+    print("Going home")
+    -- Snake pattern guarantees the x in the west is clear
+    movement.gotoX(0, true)
+    movement.gotoZ(0, true)
+    movement.gotoY(startY or 0, true)
 end
 
 -- Drop the item in the currently selected slot
 function dropItem()
-	-- Make sure there is an inventory to store the items
-	while not turtle.detect() do
-		error.post("Missing drop chest", true)	
-	end
-	if turtle.getItemCount() > 0 then
-		dropResult = turtle.drop()
-		while not dropResult do
-			error.post("Drop chest is full", true)
-			dropResult = turtle.drop()
-		end
-	end
+    -- Make sure there is an inventory to store the items
+    while not turtle.detect() do
+        error.post("Missing drop chest", true)  
+    end
+    if turtle.getItemCount() > 0 then
+        dropResult = turtle.drop()
+        while not dropResult do
+            error.post("Drop chest is full", true)
+            dropResult = turtle.drop()
+        end
+    end
 end
 
 -- Go home, then drop everything in the inventory
 -- Then load more fuel from the chest
 function emptyInventory()
-	-- Get pos and heading
-	x = movement.getX()
-	y = movement.getY()
-	z = movement.getZ()
-	h = movement.getHeading()
-	gotoHome()
-	movement.turnTo(1)
-	for i = 1,15 do
-		if turtle.getItemCount(i) > 0 then
-			turtle.select(i)
-			dropItem()
-		end
-	end
-	if turtle.getItemCount(16) > 0 then
-		turtle.select(16)
-		if not turtle.refuel(0) then
-			dropItem()
-		end
-	end
-	movement.turnTo(2)
-	turtle.suck(turtle.getItemSpace())
-	while turtle.getFuelLevel() < getMinFuel() do
-		tryRefuel()
-		if turtle.getFuelLevel() < getMinFuel() then
-			error.post("Insufficient fuel", true)
-			turtle.suck(turtle.getItemSpace())
-			tryRefuel()
-		end
-	end
-	-- Go back
-	movement.gotoY(y, true)
-	movement.gotoZ(z, true)
-	movement.gotoX(x, true)
-	movement.turnTo(h)
-	-- Select the first slot, so items dug go there
-	turtle.select(1)
+    -- Get pos and heading
+    x = movement.getX()
+    y = movement.getY()
+    z = movement.getZ()
+    h = movement.getHeading()
+    gotoHome()
+    movement.turnTo(1)
+    for i = 1,15 do
+        if turtle.getItemCount(i) > 0 then
+            turtle.select(i)
+            dropItem()
+        end
+    end
+    if turtle.getItemCount(16) > 0 then
+        turtle.select(16)
+        if not turtle.refuel(0) then
+            dropItem()
+        end
+    end
+    movement.turnTo(2)
+    turtle.suck(turtle.getItemSpace())
+    while turtle.getFuelLevel() < getMinFuel() do
+        tryRefuel()
+        if turtle.getFuelLevel() < getMinFuel() then
+            error.post("Insufficient fuel", true)
+            turtle.suck(turtle.getItemSpace())
+            tryRefuel()
+        end
+    end
+    -- Go back
+    movement.gotoY(y, true)
+    movement.gotoZ(z, true)
+    movement.gotoX(x, true)
+    movement.turnTo(h)
+    -- Select the first slot, so items dug go there
+    turtle.select(1)
 end
 
 function clearLevel()
-	while true do
-		while movement.getZ() > -width + 1 do
-			clearBlock()
-		end
-		if movement.getX () < width - 1 then
-			movement.right()
-			clearBlock()
-			movement.right()
-		else
-			movement.gotoX(0, true)
-			movement.gotoZ(0, true)
-			movement.turnTo(0, true)
-			return 
-		end
-		while movement.getZ() < 0 do
-			clearBlock()
-		end
-		if movement.getX() < width - 1 then
-			movement.left()
-			clearBlock()
-			movement.left()
-		else
-			movement.gotoX(0, true)
-			movement.gotoZ(0, true)
-			movement.turnTo(0)
-			return
-		end
-	end
+    while true do
+        while movement.getZ() > -width + 1 do
+            clearBlock()
+        end
+        if movement.getX () < width - 1 then
+            movement.right()
+            clearBlock()
+            movement.right()
+        else
+            movement.gotoX(0, true)
+            movement.gotoZ(0, true)
+            movement.turnTo(0, true)
+            return 
+        end
+        while movement.getZ() < 0 do
+            clearBlock()
+        end
+        if movement.getX() < width - 1 then
+            movement.left()
+            clearBlock()
+            movement.left()
+        else
+            movement.gotoX(0, true)
+            movement.gotoZ(0, true)
+            movement.turnTo(0)
+            return
+        end
+    end
 end
 
 -- Check to see if you should go home, then clear the block
 -- in front of you and check for ores on the top and bottom
 function clearBlock()
-	if shouldGoHome() then
-		emptyInventory()
-	end
-	movement.forward(true)
-	if shouldDigAbove() then
-		turtle.digUp()
-	end
-	if shouldDigBelow() then
-		turtle.digDown()
-	end
+    if shouldGoHome() then
+        emptyInventory()
+    end
+    movement.forward(true)
+    if shouldDigAbove() then
+        turtle.digUp()
+    end
+    if shouldDigBelow() then
+        turtle.digDown()
+    end
 end
 
-function start()	-- Load ignore blocks
-	state = "Starting"
+function start()    -- Load ignore blocks
+    state = "Starting"
 
-	ignoreBlocks = {}
-	if not fs.exists("IgnoreBlocks") then
-		print("There is no IgnoreBlocks file, please run the teach program first")
-		return
-	end
-	file = fs.open("IgnoreBlocks","r")
-  	while true do
-    	text = file.readLine()
-    	if text == nil then break end
-    	ignoreBlocks[text] = true
-  	end
+    ignoreBlocks = {}
+    if not fs.exists("IgnoreBlocks") then
+        print("There is no IgnoreBlocks file, please run the teach program first")
+        return
+    end
+    file = fs.open("IgnoreBlocks","r")
+    while true do
+        text = file.readLine()
+        if text == nil then break end
+        ignoreBlocks[text] = true
+    end
 
-	-- Select the first slot so that items dug will be put there
-	turtle.select(1)
-	-- Set fuel settings in the movement API
-	movement.setCallback(lowOnFuel, getMinFuel)
-	
-	--Make sure we have enough fuel to start
-	if turtle.getFuelLevel() < getMinFuel() then
-		emptyInventory()
-	end
+    -- Select the first slot so that items dug will be put there
+    turtle.select(1)
+    -- Set fuel settings in the movement API
+    movement.setCallback(lowOnFuel, getMinFuel)
+    
+    --Make sure we have enough fuel to start
+    if turtle.getFuelLevel() < getMinFuel() then
+        emptyInventory()
+    end
 
-	-- Head down to the bottom of the map
-	while movement.down(true) do end
-	-- Keep track of the top Y
-	startY = -movement.getY()
-	-- Set the bottom Y as 0
-	movement.setY(0)
-	while movement.getY() < startY do
-		if movement.getY() % 3 == 1 then
-			clearLevel()
-		end
-		movement.up()
-	end
-	emptyInventory()
+    -- Head down to the bottom of the map
+    while movement.down(true) do end
+    -- Keep track of the top Y
+    startY = -movement.getY()
+    -- Set the bottom Y as 0
+    movement.setY(0)
+    while movement.getY() < startY do
+        if movement.getY() % 3 == 1 then
+            clearLevel()
+        end
+        movement.up()
+    end
+    emptyInventory()
 end
 
 args = {...}
 if #args == 1 then
-	width = tonumber(args[1])
+    width = tonumber(args[1])
 elseif #args == 0 then
-	width = 8
+    width = 8
 else
-	printUsage()
-	return
+    printUsage()
+    return
 end
 start()

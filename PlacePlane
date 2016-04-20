@@ -16,20 +16,59 @@ end
 
 function getMaterials()
     goHome()
+    movement.turnTo(1)
+    turtle.select(1)
+    while turtle.suck() do end
+    while turtle.getItemCount() < 0 do
+        error.post("Need more materials", true);
+        while turtle.suck() do end
+    end
+    movement.gotoX(lastPosX)
+    movement.gotoZ(lastPosZ)
+    movement.turnTo(lastHeading)
 end
 
 function selectItem()
-
+    for i = 1,16 do 
+        if turtle.getItemCount(i) > 0 then
+            turtle.select(i)
+            return
+        end
+    end
+    getMaterials()
 end
 
 args = {...}
 
-if not #args == 1 then
+if not #args == 1 or not tonumber(args[1]) then
     printUsage()
     return
 end
 
 width = tonumber(args[1])
-while -z < width - 1 and z < -1 do
-    selectItem()
-    movement.forward() 
+while true do
+    -- Do a column
+    while -z < width - 1 and z < -1 do
+        selectItem()
+        turtle.placeDown()
+        movement.forward()
+    end
+    -- Go to the next column
+    if x < width - 1 then
+        selectItem()
+        turtle.placeDown()
+        heading = movement.getHeading()
+        movement.turnTo(3)
+        movement.forward()
+        movement.turnTo(heading + 2)
+    else
+        break
+    end
+end
+goHome()
+movement.turnTo(1)
+for local i = 1,16 do
+    turtle.select(i)
+    turtle.drop()
+end
+movement.turnTo(0)

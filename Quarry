@@ -4,12 +4,14 @@
 -- TODO
 -- Add multiple chests
 -- Support nonflat bedrock
--- Add chunk unloading support
+-- Add chunk loader support
+-- Add shutdown support
 -- Throwing away usless items while mining
 -- Support non-square shapes
 -- Setup/config program
 -- Enderchest support
 -- Chunk loader support
+-- Monitoring program
 
 -- Load the movement API
 os.loadAPI("API/movement")
@@ -196,6 +198,10 @@ end
 
 function start()    -- Load ignore blocks
     state = "Starting"
+
+    if not fs.exists("Quarry.cfg") then
+        require("SetupQuarry")
+    end
 
     ignoreBlocks = {}
     if not fs.exists("IgnoreBlocks") then

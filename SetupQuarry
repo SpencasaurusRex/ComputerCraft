@@ -1,0 +1,92 @@
+print ("Welcome to QuarrySetup v1.0")
+-- Defaults
+cfg = {drop=false, extraChests=true, enderChest=false, flatBedrock=true }
+
+function loadConfig()
+	if fs.exists("Quarry.cfg") then
+		local configFile = fs.open("Quarry.cfg", "r")
+		while true do
+			local text = configFile.readLine()
+			if text == nil then break end
+			
+			-- Filter text
+			text = string.gsub(text, "[ :]+", " ")
+			
+			-- Setup iteration function
+			local newWord = string.gmatch(text, "%S+")
+			
+			-- Extract info
+			local key = newWord()
+			local value = newWord()
+			
+			-- Check to see if it is a valid key
+			if cfg[key] ~= nil then 
+				cfg[key] = value
+			end
+		end
+	end
+end
+
+function printSettings()
+	for key,value in pairs(cfg) do
+		print (key .. " : " .. tostring(value))
+	end
+end
+
+function saveSettings()
+	local configFile = fs.open("Quarry.cfg", "w")
+	for key,value in pairs(cfg) do
+		fs.writeLine(key .. " : " .. tostring(value))
+	end
+end
+
+function getYN()
+	while true do
+		local input = read()
+		if input == "y" or input == "Y" then
+			return true
+		elseif input == "N" or input == "n" then
+			return false
+		end
+		write ("Please only enter a 'y' or an 'n': ")
+	end
+end
+
+function changeSettings()
+	print ("Do you want the turtle to drop materials that are on it's ignore list? (Y/N)")
+	cfg.drop = getYN()
+	print ("Do you want the turtle to carry around an ender chest to store the materials it mines up? (Y/N)")
+	cfg.enderChest = getYN()
+	if cfg.enderChest then
+		cfg.extraChests = false
+	else
+		print ("Do you want the turtle to use multiple chests to store the materials it mines up? (Y/N)")
+		cfg.extraChests = getYN()
+	end
+	print ("Does the world contain flat bedrock? (Y/N)")
+	cfg.flatBedrock = getYN()
+	saveSettings()
+end
+
+function printMenu()
+	print("1) View current settings")
+	print("2) Change settings")
+	print("3) Save and Exit")
+	local input = read()
+	if tonumber(input) == 1 then
+		printSettings()
+	elseif tonumber(input) == 2 then
+		changeSettings()
+	elseif tonumber(input) == 3 then
+		return false
+	else
+		print ("Please only enter a number from 1 to 3")
+	end
+end
+
+loadConfig()
+while true do
+	if not printMenu() then
+		break
+	end
+end

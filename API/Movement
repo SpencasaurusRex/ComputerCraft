@@ -1,13 +1,10 @@
--- Movment API
+-- Movement API
 -- By Spencer Haney
-
--- Version 1.1
 
 -- The default minimum amount of fuel the turtle
 -- can have before it asks for more
 MIN_FUEL = 200
 SAVE_LOCATION = "API/position"
-
 os.loadAPI("API/error")
 
 -- Hide the movement methods so that the programmer is force to use this API once loaded
@@ -15,13 +12,13 @@ local tforward = turtle.forward
 turtle.forward = nil
 local tback = turtle.back
 turtle.back = nil
-local tRight = turtle.turnRight
+local tright = turtle.turnRight
 turtle.right = nil
-local tLeft = turtle.turnLeft
+local tleft = turtle.turnLeft
 turtle.left = nil
-local tUp = turtle.up
+local tup = turtle.up
 turtle.up = nil
-local tDown = turtle.down
+local tdown = turtle.down
 turtle.down = nil
 
 -- The X value, corresponding to east (X-) and west (X+)
@@ -34,11 +31,25 @@ local m_Z = 0
 -- With 0, 1, 2, 3 accordingly
 local m_H = 0
 
+local function mload()
+    if fs.exists(SAVE_LOCATION) then
+        file = fs.open(SAVE_LOCATION, "r")
+        m_X = tonumber(file.readLine())
+        m_Y = tonumber(file.readLine())
+        m_Z = tonumber(file.readLine())
+        m_H = tonumber(file.readLine())
+        file.close()
+        return true
+    else 
+        return false
+    end
+end
+
 -- Initialize the movement API to have the following x,y,z and heading values
 -- Can be called with optional parameters, and the corresponding value will
 -- default to 0
 function init(x,y,z,h)
-    load()
+    mload()
     m_X = x or m_X or 0
     m_Y = y or m_Y or 0
     m_Z = z or m_Z or 0
@@ -57,20 +68,6 @@ function save()
     file.writeLine(m_Z)
     file.writeLine(m_H)
     file.close()
-end
-
-function load()
-    if fs.exists(SAVE_LOCATION) then
-        file = fs.open(SAVE_LOCATION, "r")
-        m_X = tonumber(file.readLine())
-        m_Y = tonumber(file.readLine())
-        m_Z = tonumber(file.readLine())
-        m_H = tonumber(file.readLine())
-        file.close()
-        return true
-    else 
-        return false
-    end
 end
 
 -- Get the current x value
@@ -244,7 +241,7 @@ end
 function up(force)
     force = force or false
     checkFuel()
-    result = tUp()
+    result = tup()
     if force and not result then
         -- Check to see if the block is diggable
         digResult = turtle.digUp()
@@ -258,7 +255,7 @@ function up(force)
                 os.sleep(.5) -- Give time for the block to fall
             end
         end
-        result = tUp()
+        result = tup()
     end
     if result then
         m_Y = m_Y + 1
@@ -271,7 +268,7 @@ end
 function down(force)
     force = force or false
     checkFuel()
-    result = tDown()
+    result = tdown()
     if force and not result then
         -- Check to see if the block is diggable
         digResult = turtle.digDown()
@@ -279,7 +276,7 @@ function down(force)
             error.post("Block below not diggable")
             return false
         end
-        result = tDown()
+        result = tdown()
     end
     if result then
         m_Y = m_Y - 1

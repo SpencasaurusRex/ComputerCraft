@@ -1,46 +1,57 @@
-print ("Welcome to QuarrySetup v1.0")
 -- Defaults
-cfg = {drop=false, extraChests=true, enderChest=false, flatBedrock=true }
+keys = {"drop", "extraChests", "enderChest", "flatBedrock", "reboot"}
+cfg = { extraChests=true, flatBedrock=true }
+cfgLocation = "Quarry.cfg"
 
-function loadConfig()
+local function loadConfig()
 	if fs.exists("Quarry.cfg") then
-		local configFile = fs.open("Quarry.cfg", "r")
-		while true do
-			local text = configFile.readLine()
-			if text == nil then break end
-			
-			-- Filter text
-			text = string.gsub(text, "[ :]+", " ")
-			
-			-- Setup iteration function
-			local newWord = string.gmatch(text, "%S+")
-			
-			-- Extract info
-			local key = newWord()
-			local value = newWord()
-			
-			-- Check to see if it is a valid key
-			if cfg[key] ~= nil then 
-				cfg[key] = value
-			end
-		end
-	end
+        local configFile = fs.open("Quarry.cfg", "r")
+        while true do
+            local text = configFile.readLine()
+            if text == nil then break end
+            
+            -- Filter text
+            text = string.gsub(text, "[ :]+", " ")
+            
+            -- Setup iteration function
+            local newWord = string.gmatch(text, "%S+")
+            
+            -- Extract info
+            local key = newWord()
+            local value = newWord()
+            
+            -- Check to see if it is a valid key
+            if value == "true" then 
+                cfg[key] = value
+            end
+        end
+    end
 end
 
-function printSettings()
+local function clearScreen()
+	term.clear()
+	term.setCursorPos(1,1)
+end
+
+local function printSettings()
+	clearScreen()
 	for key,value in pairs(cfg) do
 		print (key .. " : " .. tostring(value))
 	end
+	print("\nPress ENTER to continue")
+	read()
+	clearScreen()
 end
 
-function saveSettings()
-	local configFile = fs.open("Quarry.cfg", "w")
+local function saveSettings()
+	local configFile = fs.open(cfgLocation, "w")
 	for key,value in pairs(cfg) do
-		fs.writeLine(key .. " : " .. tostring(value))
+		configFile.writeLine(key .. " : " .. tostring(value))
 	end
+	configFile.close()
 end
 
-function getYN()
+local function getYN()
 	while true do
 		local input = read()
 		if input == "y" or input == "Y" then
@@ -52,23 +63,31 @@ function getYN()
 	end
 end
 
-function changeSettings()
+local function changeSettings()
+	clearScreen()
 	print ("Do you want the turtle to drop materials that are on it's ignore list? (Y/N)")
 	cfg.drop = getYN()
+	clearScreen()
 	print ("Do you want the turtle to carry around an ender chest to store the materials it mines up? (Y/N)")
 	cfg.enderChest = getYN()
+	clearScreen()
 	if cfg.enderChest then
 		cfg.extraChests = false
 	else
 		print ("Do you want the turtle to use multiple chests to store the materials it mines up? (Y/N)")
 		cfg.extraChests = getYN()
+		clearScreen()
 	end
 	print ("Does the world contain flat bedrock? (Y/N)")
 	cfg.flatBedrock = getYN()
+	clearScreen()
+	print ("Do you want the turtle to restart itself after it is unloaded? (Y/N)")
+	cfg.reboot = getYN()
+	clearScreen()
 	saveSettings()
 end
 
-function printMenu()
+local function printMenu()
 	print("1) View current settings")
 	print("2) Change settings")
 	print("3) Save and Exit")
@@ -78,15 +97,24 @@ function printMenu()
 	elseif tonumber(input) == 2 then
 		changeSettings()
 	elseif tonumber(input) == 3 then
-		return false
+		saveSettings()
+		return true
 	else
 		print ("Please only enter a number from 1 to 3")
 	end
 end
 
+args = {...}
+
+if #args == 1 and args[1] == "-l" then
+	loadConfig()
+	return
+end
+
+print ("Welcome to QuarrySetup v1.0")
 loadConfig()
 while true do
-	if not printMenu() then
+	if printMenu() then
 		break
 	end
 end

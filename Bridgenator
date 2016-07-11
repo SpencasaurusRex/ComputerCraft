@@ -1,0 +1,64 @@
+args = {...}
+if not args[1] then
+    print('Usage: Bridgenator [length] (maxSlope)')
+    return
+end
+shell.run('API/Movement')
+length = args[1]
+maxSlope = args[2] or 1/2
+theta = math.atan(maxSlope)
+radius = length / (2 * math.sin(theta))
+
+startX = -length / 2
+function circ(x)
+    return math.floor(math.sqrt(radius^2 - x^2))
+end
+function goHome()
+    lastY = Movement.y
+    lastZ = Movement.z
+    Movement.gotoX(1)
+    Movement.gotoZ(0)
+    Movement.gotoY(0)
+    Movement.gotoX(0)
+end
+function goBack()
+    Movement.gotoX(1)
+    Movement.gotoZ(lastZ)
+    Movement.gotoY(lastY)
+    Movement.gotoX(0)
+end
+function place()
+    if not turtle.placeDown() then
+        for slot = 1,16 do 
+            if turtle.getItemCount(slot) > 0 then
+                turtle.select(slot)
+                turtle.placeDown()
+                return
+            end
+        end
+        goHome()
+        Movement.turnTo(1)
+        gotSome = false
+        flag = false
+        while true do 
+            gotSome = turtle.suck()
+            if gotSome then flag = true end
+            if not gotSome then break end
+        end
+        if not flag then
+            Error.post('Out of materials', true)
+        end
+        goBack()   
+    end
+end
+maxY = circ(0)
+startY = circ(startX)
+print('This bridge will have a height of: ', maxY - startY)
+y = {}
+for i = 0,length do
+    x = startX + i
+    y[i] = circ(x) - startY
+    Movement.gotoZ(-i)
+    Movement.gotoY(y[i] + 1)
+    place()
+end

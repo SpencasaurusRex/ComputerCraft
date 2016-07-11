@@ -1,0 +1,34 @@
+if Zigzag then
+    return
+end
+
+ZigZag.column = function()
+    while true do
+        dig()
+        if Movement.z == -width + 1 or Movement.z == 0 then 
+            return 
+        end
+    end
+end
+
+ZigZag.layer = function ()
+    while true do
+        up = ((Movement.x % 2) == 0)
+        doColumn()
+        if Movement.x == width - 1 then
+            digUpDown()
+            Movement.gotoX(0)
+            Movement.gotoZ(0)
+            Movement.turnTo(0)
+            return
+        end
+        Movement.turnTo(3)
+        dig()
+        if up then 
+            Movement.turnTo(2)
+        else
+            Movement.turnTo(0)
+        end
+        dig()
+    end
+end

@@ -1,8 +1,5 @@
 -- Movement API
 -- By Spencer Haney
-if Movement then
-    return
-end
 
 Movement = {}
 
@@ -41,6 +38,7 @@ Movement.z = 0
 Movement.h = 0
 
 Movement.load = function()
+    print('Loading Movement position')
     if fs.exists(Movement.saveLocation) then
         file = fs.open(Movement.saveLocation, "r")
         Movement.x = tonumber(file.readLine())
@@ -63,6 +61,7 @@ Movement.init = function(x,y,z,h)
     Movement.y = y or Movement.y or 0
     Movement.z = z or Movement.z or 0
     Movement.h = h or Movement.h or 0
+    print('Initiated to: ', Movement.x, ', ', Movement.y, ', ', Movement.z, ', ', Movement.h)
 end
 
 Movement.save = function()

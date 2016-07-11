@@ -1,43 +1,52 @@
 -- Movement API
 -- By Spencer Haney
+if Movement then
+    return
+end
 
--- The default minimum amount of fuel the turtle
--- can have before it asks for more
-MIN_FUEL = 200
-SAVE_LOCATION = "API/position"
-os.loadAPI("API/error")
+Movement = {}
+
+Movement.saveLocation = "API/position"
+shell.run("API/Error")
 
 -- Hide the movement methods so that the programmer is force to use this API once loaded
-local tforward = turtle.forward
+Movement.original = {}
+
+Movement.original.forward = turtle.forward
 turtle.forward = nil
-local tback = turtle.back
+
+Movement.original.back = turtle.back
 turtle.back = nil
-local tright = turtle.turnRight
-turtle.right = nil
-local tleft = turtle.turnLeft
-turtle.left = nil
-local tup = turtle.up
+
+Movement.original.right = turtle.turnRight
+turtle.turnRight = nil
+
+Movement.original.left = turtle.turnLeft
+turtle.turnLeft = nil
+
+Movement.original.up = turtle.up
 turtle.up = nil
-local tdown = turtle.down
+
+Movement.original.down = turtle.down
 turtle.down = nil
 
 -- The X value, corresponding to east (X-) and west (X+)
-local m_X = 0
+Movement.x = 0
 -- The Y value, corresponding to up and down
-local m_Y = 0
+Movement.y = 0
 -- The Z value, corresponding to north (Z-) and south (Z+)
-local m_Z = 0
+Movement.z = 0
 -- The heading value, corresponding to North, West, South, East
 -- With 0, 1, 2, 3 accordingly
-local m_H = 0
+Movement.h = 0
 
-local function mload()
-    if fs.exists(SAVE_LOCATION) then
-        file = fs.open(SAVE_LOCATION, "r")
-        m_X = tonumber(file.readLine())
-        m_Y = tonumber(file.readLine())
-        m_Z = tonumber(file.readLine())
-        m_H = tonumber(file.readLine())
+Movement.load = function()
+    if fs.exists(Movement.saveLocation) then
+        file = fs.open(Movement.saveLocation, "r")
+        Movement.x = tonumber(file.readLine())
+        Movement.y = tonumber(file.readLine())
+        Movement.z = tonumber(file.readLine())
+        Movement.h = tonumber(file.readLine())
         file.close()
         return true
     else 
@@ -48,135 +57,57 @@ end
 -- Initialize the movement API to have the following x,y,z and heading values
 -- Can be called with optional parameters, and the corresponding value will
 -- default to 0
-function init(x,y,z,h)
-    mload()
-    m_X = x or m_X or 0
-    m_Y = y or m_Y or 0
-    m_Z = z or m_Z or 0
-    m_H = h or m_H or 0
+Movement.init = function(x,y,z,h)
+    Movement.load()
+    Movement.x = x or Movement.x or 0
+    Movement.y = y or Movement.y or 0
+    Movement.z = z or Movement.z or 0
+    Movement.h = h or Movement.h or 0
 end
 
-function setCallback(refFunc, minFunc)
-    refuelFunc = refFunc
-    minFuelFunc = minFunc
-end
-
-function save()
-    file = fs.open(SAVE_LOCATION, "w")
-    file.writeLine(m_X)
-    file.writeLine(m_Y)
-    file.writeLine(m_Z)
-    file.writeLine(m_H)
+Movement.save = function()
+    file = fs.open(Movement.saveLocation, "w")
+    file.writeLine(Movement.x)
+    file.writeLine(Movement.y)
+    file.writeLine(Movement.z)
+    file.writeLine(Movement.h)
     file.close()
 end
 
--- Get the current x value
-function getX()
-    return m_X
-end
-
--- Get the current y value
-function getY()
-    return m_Y
-end
-
--- Get the current z value
-function getZ()
-    return m_Z
-end
-
--- Get the current heading value
-function getHeading()
-    return m_H
-end
-
--- Set the current x value
-function setX(x)
-    m_X = x
-end
-
--- Set the current y value
-function setY(y)
-    m_Y = y
-end
-
--- Set the current z value
-function setZ(z)
-    m_Z = z
-end
-
--- Set the minimum amount of fuel it can have before it addresses the problem
-function setMinFuel(m)
-    minFuel = m
-end
-
--- Tell the movement API that you will handle checking fuel levels and
--- refuelling in your program, rather than through the API
-function setAutoRefuel(val)
-    auto = val or true
-end
-
--- Returns whether or not the fuel level is below the set value, or the default if a value has not been set
-function lowOnFuel()
-    if minFuelFunc then
-        return turtle.getFuelLevel() <= minFuelFunc()
-    end
-    if minFuel then
-        return turtle.getFuelLevel() <= minFuel;
-    end
-    return turtle.getFuelLevel() <= MIN_FUEL
-end
-
--- Check the fuel levels (unless on auto) and attempt to refuel if sufficiently low
-local function checkFuel()
-    if minFuelFunc and lowOnFuel() then
-        if not inCallback then
-            inCallback = true
-            refuelFunc()
-            inCallback = false
-        end
-        return
-    end
-    if not auto and lowOnFuel() then
-        turtle.select(16)
-        refuelResult = turtle.refuel()
-        while not refuelResult do
-            error.post("Out of fuel, place fuel in slot 16", true)
-            refuelResult = turtle.refuel()
-        end
-    end
-end
-
 -- Turn the turtle left and modify the heading value accordingly
-function left()
-    tleft()
-    m_H = (m_H + 1) % 4
+Movement.left = function()
+    Movement.original.left()
+    Movement.h = (Movement.h + 1) % 4
     save()
 end
 
 -- Turn the turtle right and modify the heading value accordingly
-function right()
-    tright()
-    m_H = (m_H - 1) % 4
-    save()
+Movement.right = function()
+    Movement.original.right()
+    Movement.h = (Movement.h - 1) % 4
+    Movement.save()
 end
 
 -- Turn the turtle around and modify the heading value accordingly
-function turnAround()
-    left()
-    left()
+Movement.turnAround = function()
+    Movement.left()
+    Movement.left()
+end
+
+Movement.setCallback = function(func)
+    Movement.checkFuel = func
 end
 
 -- Move the turtle forward one block digging if necessary and force is specified
-function forward(force)
+Movement.forward = function(force)
     force = force or false
-    checkFuel()
-    result = tforward()
+    if Movement.checkFuel then Movement.checkFuel() end
+    result = Movement.original.forward()
     if force and not result then
         -- Check to see if the block is diggable
         digResult = turtle.dig()
         if not digResult then
-            error.post("Block not diggable")
+            Error.post("Block not diggable")
             return false
         else
             -- If so, then keep digging til we're done  (in case of falling blocks)
@@ -184,34 +115,34 @@ function forward(force)
                 turtle.dig()
             end
         end
-        result = tforward()
+        result = Movement.original.forward()
     end
     if result then
-        if m_H == 0 then
-            m_Z = m_Z - 1
-        elseif m_H == 1 then
-            m_X = m_X - 1
-        elseif m_H == 2 then
-            m_Z = m_Z + 1
+        if Movement.h == 0 then
+            Movement.z = Movement.z - 1
+        elseif Movement.h == 1 then
+            Movement.x = Movement.x - 1
+        elseif Movement.h == 2 then
+            Movement.z = Movement.z + 1
         else
-            m_X = m_X + 1
+            Movement.x = Movement.x + 1
         end
-        save()
+        Movement.save()
     end
     return result
 end
 
 -- Move the turtle back one block, turning and digging if necessary and force is specified
-function back(force)
+Movement.back = function(force)
     force = force or false
-    checkFuel()
-    result = tback()
+    if Movement.checkFuel then Movement.checkFuel() end
+    result = Movement.original.back()
     if force and not result then
-        turnAround()
+        Movement.turnAround()
         -- Check to see if the block is diggable
         digResult = turtle.dig()
         if not digResult then
-            error.post("Block not diggable")
+            Error.post("Block not diggable")
             return false
         else
             -- If so, then keep digging til we're done  (in case of falling blocks)
@@ -219,34 +150,34 @@ function back(force)
                 turtle.dig()
             end
         end
-        result = tforward()
-        turnAround()
+        result = Movement.original.forward()
+        Movement.turnAround()
     end
     if result then
-        if m_H == 0 then
-            m_Z = m_Z + 1
-        elseif m_H == 1 then
-            m_X = m_X + 1
-        elseif m_H == 2 then
-            m_Z = m_Z - 1
+        if Movement.h == 0 then
+            Movement.z = Movement.z + 1
+        elseif Movement.h == 1 then
+            Movement.x = Movement.x + 1
+        elseif Movement.h == 2 then
+            Movement.z = Movement.z - 1
         else
-            m_X = m_X - 1
+            Movement.x = Movement.x - 1
         end
-        save()
+        Movement.save()
     end
     return result
 end
 
 -- Move the turtle up one block, digging if necessary and force is specified
-function up(force)
+Movement.up = function(force)
     force = force or false
-    checkFuel()
-    result = tup()
+    if Movement.checkFuel then Movement.checkFuel() end
+    result = Movement.original.up()
     if force and not result then
         -- Check to see if the block is diggable
         digResult = turtle.digUp()
         if not digResult then
-            error.post("Block above not diggable")
+            Error.post("Block above not diggable")
             return false
         else
             -- If so, then keep digging til we're done  (in case of falling blocks)
@@ -255,107 +186,107 @@ function up(force)
                 os.sleep(.5) -- Give time for the block to fall
             end
         end
-        result = tup()
+        result = Movement.original.up()
     end
     if result then
-        m_Y = m_Y + 1
-        save()
+        Movement.y = Movement.y + 1
+        Movement.save()
     end
     return result
 end
 
 -- Move the turtle down one block, digging if necessary and force is specified
-function down(force)
+Movement.down = function(force)
     force = force or false
-    checkFuel()
-    result = tdown()
+    if Movement.checkFuel then Movement.checkFuel() end
+    result = Movement.original.down()
     if force and not result then
         -- Check to see if the block is diggable
         digResult = turtle.digDown()
         if not digResult then
-            error.post("Block below not diggable")
+            Error.post("Block below not diggable")
             return false
         end
-        result = tdown()
+        result = Movement.original.down()
     end
     if result then
-        m_Y = m_Y - 1
-        save()
+        Movement.y = Movement.y - 1
+        Movement.save()
     end
     return result
 end
 
 -- Turns to the specified heading
-function turnTo(heading)
-    o = (heading - m_H) % 4
+Movement.turnTo = function(heading)
+    o = (heading - Movement.h) % 4
     if 
-       o == 1 then left() elseif 
-       o == 2 then turnAround() elseif 
-       o == 3 then right() 
+       o == 1 then Movement.left() elseif 
+       o == 2 then Movement.turnAround() elseif 
+       o == 3 then Movement.right() 
     end
 end
 
 -- Move towards the x provided, digging if necessary and force is specified
-function gotoX(x, force)
+Movement.gotoX = function(x, force)
     force = force or false
-    if m_X > x then
-        turnTo(1)
-        while m_X > x do
-            forward(force)
+    if Movement.x > x then
+        Movement.turnTo(1)
+        while Movement.x > x do
+            Movement.forward(force)
         end
     end
-    if m_X < x then
-        turnTo(3)
-        while m_X < x do
-            forward(force)
+    if Movement.x < x then
+        Movement.turnTo(3)
+        while Movement.x < x do
+            Movement.forward(force)
         end
     end
 end
 
 -- Move toward the y provided, digging if necessary and force is specified
-function gotoY(y, force)
+Movement.gotoY = function(y, force)
     force = force or false
-    if m_Y > y then
-        while m_Y > y do
-            down(force)
+    if Movement.y > y then
+        while Movement.y > y do
+            Movement.down(force)
         end
     end
-    if m_Y < y then
-        while m_Y < y do
-            up(force)
+    if Movement.y < y then
+        while Movement.y < y do
+            Movement.up(force)
         end
     end
 end
 
 -- Move toward the z provided, digging if necessary and force is specified
-function gotoZ(z, force)
+Movement.gotoZ = function(z, force)
     force = force or false
-    if m_Z > z then
-        turnTo(0)
-        while m_Z > z do
-            forward(force)
+    if Movement.z > z then
+        Movement.turnTo(0)
+        while Movement.z > z do
+            Movement.forward(force)
         end
     end
-    if m_Z < z then
-        turnTo(2)
-        while m_Z < z do
-            forward(force)
+    if Movement.z < z then
+        Movement.turnTo(2)
+        while Movement.z < z do
+            Movement.forward(force)
         end
     end
 end
 
 -- Calculate the distance among all axes to the destination point
-function linearDistance(x, y, z)
-    dx = math.abs(m_X - x)
-    dy = math.abs(m_Y - y)
-    dz = math.abs(m_Z - z)
+Movement.rectilinearDistance = function(x, y, z)
+    dx = math.abs(Movement.x - x)
+    dy = math.abs(Movement.y - y)
+    dz = math.abs(Movement.z - z)
     return dx + dy + dz
 end
 
 -- Bind the turtle API to this
-turtle.forward = forward
-turtle.back = back
-turtle.turnRight = right
-turtle.turnLeft = left
-turtle.up = up
-turtle.down = down
+turtle.forward = Movement.forward
+turtle.back = Movement.back
+turtle.turnRight = Movement.right
+turtle.turnLeft = Movement.left
+turtle.up = Movement.up
+turtle.down = Movement.down

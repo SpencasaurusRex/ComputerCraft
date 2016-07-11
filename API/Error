@@ -1,7 +1,13 @@
 -- Error API
 -- By Spencer Haney
 
-function post(message, pause)
+if Error then
+	return
+end
+
+Error = {}
+
+Error.post = function(message, pause)
 	pause = pause or false
 	print(message)
 	if pause then

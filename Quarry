@@ -1,7 +1,5 @@
 cfgLocation = "Quarry.cfg"
 ignoreLocation = "IgnoreBlocks"
-saveLocation = "Quarry.sav"
-os.loadAPI("API/movement")
 
 local function digUpDown()
     a,b = turtle.inspectUp()
@@ -14,30 +12,21 @@ local function digUpDown()
     end
 end
 
-local function save()
-    local f = fs.open(saveLocation, "w")
-    f.writeLine(movement.getX())
-    f.writeLine(movement.getY())
-    f.writeLine(movement.getZ())
-    f.writeLine(width)
-    f.close()
-end
-
 local function goHome()
-    lastPosX = movement.getX()
-    lastPosY = movement.getY()
-    lastPosZ = movement.getZ()
-    lastHeading = movement.getHeading()
-    movement.gotoX(0)
-    movement.gotoZ(0)
-    movement.gotoY(0)
+    lastPosX = Movement.x
+    lastPosY = Movement.y
+    lastPosZ = Movement.z
+    lastHeading = Movement.h
+    Movement.gotoX(0)
+    Movement.gotoZ(0)
+    Movement.gotoY(0)
 end
 
 local function goBack()
-    movement.gotoY(lastPosY)
-    movement.gotoZ(lastPosZ)
-    movement.gotoX(lastPosX)
-    movement.turnTo(lastHeading)
+    Movement.gotoY(lastPosY)
+    Movement.gotoZ(lastPosZ)
+    Movement.gotoX(lastPosX)
+    Movement.turnTo(lastHeading)
 end
 
 local function attemptRefuel()
@@ -73,15 +62,15 @@ local function dropAll()
                 turtle.select(i)
                 while not turtle.drop() do
                     if cfg.extraChests then
-                        movement.up(true)
+                        Movement.up(true)
                         while not turtle.detect() do
-                            error.post("Missing drop chest2", true)
+                            Error.post("Missing drop chest2", true)
                         end
                     elseif cfg.enderChest then
                         -- Wait for extraction
                         sleep(10)
                     else
-                        error.post("Drop chest full", true)
+                        Error.post("Drop chest full", true)
                     end
                 end
             end
@@ -94,11 +83,11 @@ local function emptyInventoryIntoChest()
         placeEnderChest()
     else
         goHome()
-        movement.turnTo(1)
+        Movement.turnTo(1)
     end
     -- Check for initial chest
     while not turtle.detect() do
-        error.post("Missing drop chest1", true)
+        Error.post("Missing drop chest1", true)
     end
     dropAll()
     if not cfg.enderChest then
@@ -110,13 +99,13 @@ local function getFuel()
     goHome()
     -- While were here, store stuff
     if not cfg.enderChest then
-        movement.turnTo(1)
+        Movement.turnTo(1)
         emptyInventoryIntoChest()
     end
-    movement.turnTo(2)
+    Movement.turnTo(2)
     while turtle.getFuelLevel() < getMinFuel() do
         while not turtle.suck() do
-            error.post("Not enough fuel", true)
+            Error.post("Not enough fuel", true)
         end
         attemptRefuel()
     end
@@ -164,7 +153,7 @@ end
 
 local function dig()
     digUpDown()
-    movement.forward(true)
+    Movement.forward(true)
     if cfg.reboot then save() end
     checkStuff()
 end
@@ -172,7 +161,7 @@ end
 local function doColumn()
     while true do
         dig()
-        if movement.getZ() == -width + 1 or movement.getZ() == 0 then 
+        if Movement.z == -width + 1 or Movement.z == 0 then 
             return 
         end
     end
@@ -181,21 +170,21 @@ end
 local function clearLevel()
     digUpDown()
     while true do
-        up = ((movement.getX() % 2) == 0)
+        up = ((Movement.x % 2) == 0)
         doColumn()
-        if movement.getX() == width - 1 then
+        if Movement.x == width - 1 then
             digUpDown()
-            movement.gotoX(0)
-            movement.gotoZ(0)
-            movement.turnTo(0)
+            Movement.gotoX(0)
+            Movement.gotoZ(0)
+            Movement.turnTo(0)
             return
         end
-        movement.turnTo(3)
+        Movement.turnTo(3)
         dig()
         if up then 
-            movement.turnTo(2)
+            Movement.turnTo(2)
         else
-            movement.turnTo(0)
+            Movement.turnTo(0)
         end
         dig()
     end
@@ -232,7 +221,7 @@ local function loadIgnoreBlocks()
 end
 
 local function load()
-    os.loadAPI("API/movement")
+    shell.run("API/Movement")
     loadConfig()
     loadIgnoreBlocks()
     if cfg.reboot then
@@ -241,15 +230,13 @@ local function load()
 
     -- Select the first slot so that items dug will be put there
     turtle.select(1)
-    -- Set fuel settings in the movement API
-    movement.setCallback(function() return 10 end, function() return 10 end)
 end
 
 local function go()
-    while movement.getY() < 0 do
+    while Movement.y < 0 do
         clearLevel()
         for i=1,3 do
-            movement.up(true)
+            Movement.up(true)
             checkStuff()
         end
     end
@@ -262,13 +249,13 @@ end
 
 local function start()
     -- Head down to the bottom of the map
-    while movement.down(true) do checkStuff() end
-    movement.up(true)
+    while Movement.down(true) do checkStuff() end
+    Movement.up(true)
     go()
 end
 
 local function reboot()
-    movement.init()
+    Movement.init()
     local f = fs.open(saveLocation, "r")
     lx = tonumber(f.readLine())
     ly = tonumber(f.readLine())
@@ -277,9 +264,9 @@ local function reboot()
     f.close()
 
     checkStuff()
-    movement.gotoY(ly)
-    movement.gotoZ(lz)
-    movement.gotoX(lx)
+    Movement.gotoY(ly)
+    Movement.gotoZ(lz)
+    Movement.gotoX(lx)
     go()
 end
 

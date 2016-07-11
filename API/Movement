@@ -78,7 +78,7 @@ end
 Movement.left = function()
     Movement.original.left()
     Movement.h = (Movement.h + 1) % 4
-    save()
+    Movement.save()
 end
 
 -- Turn the turtle right and modify the heading value accordingly
@@ -276,7 +276,7 @@ Movement.gotoZ = function(z, force)
 end
 
 -- Calculate the distance among all axes to the destination point
-Movement.rectilinearDistance = function(x, y, z)
+Movement.snakeDistance = function(x, y, z)
     dx = math.abs(Movement.x - x)
     dy = math.abs(Movement.y - y)
     dz = math.abs(Movement.z - z)

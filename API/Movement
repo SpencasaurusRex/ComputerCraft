@@ -6,27 +6,6 @@ Movement = {}
 Movement.saveLocation = "API/position"
 shell.run("API/Error")
 
--- Hide the movement methods so that the programmer is force to use this API once loaded
-Movement.original = {}
-
-Movement.original.forward = turtle.forward
-turtle.forward = nil
-
-Movement.original.back = turtle.back
-turtle.back = nil
-
-Movement.original.right = turtle.turnRight
-turtle.turnRight = nil
-
-Movement.original.left = turtle.turnLeft
-turtle.turnLeft = nil
-
-Movement.original.up = turtle.up
-turtle.up = nil
-
-Movement.original.down = turtle.down
-turtle.down = nil
-
 -- The X value, corresponding to east (X-) and west (X+)
 Movement.x = 0
 -- The Y value, corresponding to up and down
@@ -75,14 +54,14 @@ end
 
 -- Turn the turtle left and modify the heading value accordingly
 Movement.left = function()
-    Movement.original.left()
+    turtle.left()
     Movement.h = (Movement.h + 1) % 4
     Movement.save()
 end
 
 -- Turn the turtle right and modify the heading value accordingly
 Movement.right = function()
-    Movement.original.right()
+    turtle.right()
     Movement.h = (Movement.h - 1) % 4
     Movement.save()
 end
@@ -101,7 +80,7 @@ end
 Movement.forward = function(force)
     force = force or false
     if Movement.checkFuel then Movement.checkFuel() end
-    result = Movement.original.forward()
+    result = turtle.forward()
     if force and not result then
         -- Check to see if the block is diggable
         digResult = turtle.dig()
@@ -114,7 +93,7 @@ Movement.forward = function(force)
                 turtle.dig()
             end
         end
-        result = Movement.original.forward()
+        result = turtle.forward()
     end
     if result then
         if Movement.h == 0 then
@@ -135,7 +114,7 @@ end
 Movement.back = function(force)
     force = force or false
     if Movement.checkFuel then Movement.checkFuel() end
-    result = Movement.original.back()
+    result = turtle.back()
     if force and not result then
         Movement.turnAround()
         -- Check to see if the block is diggable
@@ -149,7 +128,7 @@ Movement.back = function(force)
                 turtle.dig()
             end
         end
-        result = Movement.original.forward()
+        result = turtle.back()
         Movement.turnAround()
     end
     if result then
@@ -171,7 +150,7 @@ end
 Movement.up = function(force)
     force = force or false
     if Movement.checkFuel then Movement.checkFuel() end
-    result = Movement.original.up()
+    result = turtle.up()
     if force and not result then
         -- Check to see if the block is diggable
         digResult = turtle.digUp()
@@ -185,7 +164,7 @@ Movement.up = function(force)
                 os.sleep(.5) -- Give time for the block to fall
             end
         end
-        result = Movement.original.up()
+        result = turtle.up()
     end
     if result then
         Movement.y = Movement.y + 1
@@ -198,7 +177,7 @@ end
 Movement.down = function(force)
     force = force or false
     if Movement.checkFuel then Movement.checkFuel() end
-    result = Movement.original.down()
+    result = turtle.down()
     if force and not result then
         -- Check to see if the block is diggable
         digResult = turtle.digDown()
@@ -206,7 +185,7 @@ Movement.down = function(force)
             Error.post("Block below not diggable")
             return false
         end
-        result = Movement.original.down()
+        result = turtle.down()
     end
     if result then
         Movement.y = Movement.y - 1
@@ -281,11 +260,3 @@ Movement.snakeDistance = function(x, y, z)
     dz = math.abs(Movement.z - z)
     return dx + dy + dz
 end
-
--- Bind the turtle API to this
-turtle.forward = Movement.forward
-turtle.back = Movement.back
-turtle.turnRight = Movement.right
-turtle.turnLeft = Movement.left
-turtle.up = Movement.up
-turtle.down = Movement.down
